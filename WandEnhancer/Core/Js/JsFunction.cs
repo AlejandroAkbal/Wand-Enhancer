@@ -105,7 +105,7 @@ namespace WandEnhancer.Core.Js
     }
 
     /// <summary>A splice: replace <c>[Start, End)</c> of the bundle with <see cref="Text"/>.</summary>
-    internal sealed class JsEdit
+    public sealed class JsEdit
     {
         public JsEdit(int start, int end, string text)
         {

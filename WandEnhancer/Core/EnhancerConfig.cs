@@ -12,7 +12,7 @@ namespace WandEnhancer.Core
         /// One patch site: a regular expression anchored on identifiers that survive minification,
         /// the embedded snippet that gets spliced in (<c>Patches/*.js</c>), and how the splice is placed.
         /// </summary>
-        internal sealed class PatchEntry
+        public sealed class PatchEntry
         {
             public string Name { get; set; }
             public Regex Target { get; set; }
@@ -42,10 +42,13 @@ namespace WandEnhancer.Core
             public bool Applied { get; set; }
             public bool IsResolved { get; set; }
 
+            /// <summary>A patch whose absence on a build does not fail the run.</summary>
+            public bool IsOptional { get; set; }
+
             /// <summary>Placeholders that live outside the matched span, resolved against the whole file.</summary>
             public Func<string, string[]> FilePlaceholders { get; set; }
 
-            internal JsEdit[] Locate(JsCursor cursor)
+            public JsEdit[] Locate(JsCursor cursor)
             {
                 IsResolved = true;
                 var match = Target.Match(cursor.Text);
@@ -119,7 +122,7 @@ namespace WandEnhancer.Core
         {
             var match = Regex.Match(
                 source,
-                @"this\.(?<trainer>#[\w$]+)\?\.getMetadata\((?<metadata>[\w$]+\.[\w$]+)\)",
+                @"this\s*\.\s*(?<trainer>#[\w$]+)\s*\?\.\s*getMetadata\(\s*(?<metadata>[\w$]+\s*\.\s*[\w$]+)\s*\)",
                 RegexOptions.Singleline);
             if (!match.Success)
             {
@@ -146,11 +149,11 @@ namespace WandEnhancer.Core
             return new[]
             {
                 "trainerId",
-                "this." + Pick(source, @"trainerId:this\.(?<trainerId>#[\w$]+)", "trainerId", patchName)
+                "this." + Pick(source, @"trainerId\s*:\s*this\s*\.\s*(?<trainerId>#[\w$]+)", "trainerId", patchName)
             };
         }
 
-        internal static Dictionary<EPatchType, PatchEntry[]> GetInstance()
+        public static Dictionary<EPatchType, PatchEntry[]> GetInstance()
         {
             return new Dictionary<EPatchType, PatchEntry[]>
             {
@@ -163,7 +166,7 @@ namespace WandEnhancer.Core
                             Name = "disableNativeRemotePairing",
                             SearchHints = new[] { "requestRemoteAuthCode", "/v3/auth/remote_code" },
                             CapabilityHints = new[] { "requestRemoteAuthCode" },
-                            Target = new Regex(@"requestRemoteAuthCode\(\)\{(?<body>[^{}]*)\}",
+                            Target = new Regex(@"requestRemoteAuthCode\(\)\s*\{(?<body>[^{}]*)\}",
                                 RegexOptions.Singleline),
                             Payload = "disable-native-pairing",
                             SpanGroup = "body"
@@ -180,7 +183,7 @@ namespace WandEnhancer.Core
                             CandidateFileNames = new[] { "index.js" },
                             SearchHints = new[] { "ACTION_CHECK_FOR_UPDATE" },
                             CapabilityHints = new[] { "ACTION_CHECK_FOR_UPDATE" },
-                            Target = new Regex(@"registerHandler\((?<patch>""ACTION_CHECK_FOR_UPDATE"",[^;]*?)\)(?=;)",
+                            Target = new Regex(@"registerHandler\(\s*(?<patch>""ACTION_CHECK_FOR_UPDATE""\s*,[\s\S]*?)\)\s*;",
                                 RegexOptions.Singleline),
                             Payload = "disable-updates",
                             SpanGroup = "patch"
@@ -197,7 +200,7 @@ namespace WandEnhancer.Core
                             CandidateFileNames = new[] { "index.js" },
                             SearchHints = new[] { "whenReady().then(" },
                             CapabilityHints = new[] { "whenReady().then(" },
-                            Target = new Regex(@"(?<app>[\w$]+)\.whenReady\(\)\.then\("),
+                            Target = new Regex(@"(?<app>[\w$]+)\s*\.\s*whenReady\(\)\s*\.\s*then\("),
                             Payload = "devtools-f12",
                             InsertBeforeMatch = true
                         }
@@ -213,7 +216,7 @@ namespace WandEnhancer.Core
                             CandidateFileNames = new[] { "index.js" },
                             SearchHints = new[] { "whenReady().then(run)" },
                             CapabilityHints = new[] { "whenReady().then(run)" },
-                            Target = new Regex(@"(?<app>[\w$]+)\.whenReady\(\)\.then\(run\)"),
+                            Target = new Regex(@"(?<app>[\w$]+)\s*\.\s*whenReady\(\)\s*\.\s*then\(\s*run\s*\)"),
                             Payload = "remote-bridge-boot",
                             SpanGroup = "0"
                         },
@@ -223,7 +226,7 @@ namespace WandEnhancer.Core
                             SearchHints = new[] { "setCurrentTrainer" },
                             CapabilityHints = new[] { "setCurrentTrainer" },
                             Target = new Regex(
-                                @"(?<head>setCurrentTrainer\(e,t=null\)\{(?:const (?<trainerInfo>[\w$]+)=e\?\.trainerId\|\|null,[^;]*;))",
+                                @"(?<head>setCurrentTrainer\(\s*[\w$]+\s*,\s*[\w$]+\s*=\s*null\s*\)\s*\{\s*const\s+(?<trainerInfo>[\w$]+)\s*=\s*[\w$]+\s*\?\.\s*trainerId\s*\|\|\s*null[\s\S]*?;)",
                                 RegexOptions.Singleline),
                             Payload = "remote-bridge-renderer",
                             SpanGroup = "head",
@@ -236,7 +239,7 @@ namespace WandEnhancer.Core
                             SearchHints = new[] { "Date.now().toString()" },
                             CapabilityHints = new[] { "Date.now().toString()" },
                             Target = new Regex(
-                                @"(?<method>#[\w$]+)\(\)\{(?<body>[^{}]*?Date\.now\(\)\.toString\(\)[^{}]*)\}",
+                                @"(?<method>#[\w$]+)\(\)\s*\{(?<body>[^{}]*?Date\.now\(\)\.toString\(\)[^{}]*)\}",
                                 RegexOptions.Singleline),
                             Payload = "remote-bridge-reset",
                             InsertBeforeMatchEnd = true
@@ -247,7 +250,7 @@ namespace WandEnhancer.Core
                             SearchHints = new[] { "client-state" },
                             CapabilityHints = new[] { "client-state" },
                             Target = new Regex(
-                                @"this\.(?<channel>#[\w$]+)\?\.send\(""client-state"",\{(?<snapshot>[^{}]*)\}\)",
+                                @"this\s*\.\s*(?<channel>#[\w$]+)\s*\?\.\s*send\(\s*""client-state""\s*,\s*\{(?<snapshot>[^{}]*)\}\s*\)",
                                 RegexOptions.Singleline),
                             Payload = "remote-bridge-sync",
                             InsertAfterMatch = true,
@@ -258,7 +261,7 @@ namespace WandEnhancer.Core
                             Name = "remoteBridgeValueSubscription",
                             SearchHints = new[] { "onValueSet" },
                             CapabilityHints = new[] { "onValueSet" },
-                            Target = new Regex(@"(?<head>#[\w$]+\(e,t\)\{)(?=t\.push\(e\.onValueSet\()"),
+                            Target = new Regex(@"(?<head>#[\w$]+\(\s*[\w$]+\s*,\s*[\w$]+\s*\)\s*\{)(?=\s*[\w$]+\s*\.\s*push\(\s*[\w$]+\s*\.\s*onValueSet\()"),
                             Payload = "remote-bridge-value-subscription",
                             InsertAfterMatch = true,
                             FilePlaceholders = source => TrainerId(source, "remoteBridgeValueSubscription")
@@ -268,7 +271,7 @@ namespace WandEnhancer.Core
                             Name = "remoteBridgeValueDelta",
                             SearchHints = new[] { "client-value-changed" },
                             CapabilityHints = new[] { "client-value-changed" },
-                            Target = new Regex(@"(?<head>onValueSet\((?<change>[\w$]+)=>\{)(?=[^}]*client-value-changed)"),
+                            Target = new Regex(@"(?<head>onValueSet\(\s*\(?\s*(?<change>[\w$]+)\s*\)?\s*=>\s*\{)(?=[^}]*client-value-changed)"),
                             Payload = "remote-bridge-value-delta",
                             InsertAfterMatch = true
                         }

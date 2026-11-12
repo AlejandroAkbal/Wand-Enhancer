@@ -8,7 +8,7 @@ namespace WandEnhancer.Core.Js
     /// Navigates minified JavaScript by matching delimiters. Anchoring on stable API
     /// and IPC names keeps patches valid across builds.
     /// </summary>
-    internal sealed class JsCursor
+    public sealed class JsCursor
     {
         private const string RegexPrecedingChars = "(,=:[!&|?{};+-*%~^<>";
         private const int NameLookbackChars = 128;
