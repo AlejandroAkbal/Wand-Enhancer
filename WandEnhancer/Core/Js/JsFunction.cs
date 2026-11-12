@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 namespace WandEnhancer.Core.Js
 {
     /// <summary>A named function or class method located in a bundle, addressed by delimiter position.</summary>
-    internal sealed class JsFunction
+    public sealed class JsFunction
     {
         private static readonly Regex ReturnKeyword = new Regex(@"(?<![\w$])return(?![\w$])");
 
