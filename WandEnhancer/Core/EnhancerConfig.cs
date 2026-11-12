@@ -12,7 +12,7 @@ namespace WandEnhancer.Core
         /// One patch site: a regular expression anchored on identifiers that survive minification,
         /// the embedded snippet that gets spliced in (<c>Patches/*.js</c>), and how the splice is placed.
         /// </summary>
-        public sealed class PatchEntry
+        internal sealed class PatchEntry
         {
             public string Name { get; set; }
             public Regex Target { get; set; }
@@ -45,7 +45,7 @@ namespace WandEnhancer.Core
             /// <summary>Placeholders that live outside the matched span, resolved against the whole file.</summary>
             public Func<string, string[]> FilePlaceholders { get; set; }
 
-            public JsEdit[] Locate(JsCursor cursor)
+            internal JsEdit[] Locate(JsCursor cursor)
             {
                 IsResolved = true;
                 var match = Target.Match(cursor.Text);
@@ -150,7 +150,7 @@ namespace WandEnhancer.Core
             };
         }
 
-        public static Dictionary<EPatchType, PatchEntry[]> GetInstance()
+        internal static Dictionary<EPatchType, PatchEntry[]> GetInstance()
         {
             return new Dictionary<EPatchType, PatchEntry[]>
             {
