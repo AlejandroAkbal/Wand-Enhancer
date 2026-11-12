@@ -1,0 +1,1 @@
+getUserAccount(){return this.${service}.fetch({endpoint:"/v3/account",method:"GET",name:"/v3/account",collectMetrics:!1}).then(response=>{response.subscription={period:"yearly",state:"active"};return response;})}

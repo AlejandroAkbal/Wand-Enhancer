@@ -163,6 +163,46 @@ namespace WandEnhancer.Core
                     {
                         new PatchEntry
                         {
+                            Name = "getUserAccount",
+                            SearchHints = new[] { "getUserAccount()", "/v3/account" },
+                            CapabilityHints = new[] { "getUserAccount()" },
+                            Target = new Regex(
+                                @"getUserAccount\(\)\s*\{\s*return\s+this\.(?<service>#[\w$]+)\.fetch\(\{\s*endpoint:\s*""/v3/account""[^{}]*\}\)\s*;?\s*\}",
+                                RegexOptions.Singleline),
+                            Payload = "account-get-user"
+                        },
+                        new PatchEntry
+                        {
+                            Name = "setAccountWandBrandExperience",
+                            SearchHints = new[] { "setAccountWandBrandExperience", "/v3/account/brand_experience_wand" },
+                            CapabilityHints = new[] { "setAccountWandBrandExperience" },
+                            Target = new Regex(
+                                @"setAccountWandBrandExperience\(\)\s*\{\s*return\s+this\.(?<service>#[\w$]+)\.post\(""/v3/account/brand_experience_wand""\)\s*;?\s*\}",
+                                RegexOptions.Singleline),
+                            Payload = "account-brand-experience"
+                        },
+                        new PatchEntry
+                        {
+                            Name = "setAccountLanguage",
+                            SearchHints = new[] { "setAccountLanguage(", "/v3/account/language" },
+                            CapabilityHints = new[] { "setAccountLanguage(" },
+                            Target = new Regex(
+                                @"setAccountLanguage\((?<params>[^)]*)\)\s*\{\s*return\s+(?<expr>this\.#[\w$]+\.post\(""/v3/account/language""\s*,\s*\{[^{}]*\}\))\s*;?\s*\}",
+                                RegexOptions.Singleline),
+                            Payload = "account-language"
+                        },
+                        new PatchEntry
+                        {
+                            Name = "setAccountReducer",
+                            SearchHints = new[] { "ACTION_SET_ACCOUNT" },
+                            CapabilityHints = new[] { "ACTION_SET_ACCOUNT" },
+                            Target = new Regex(
+                                @"const\s+(?<decl>[\w$]+)\s*=\s*""ACTION_SET_ACCOUNT""\s*;\s*function\s+(?<fn>[\w$]+)\s*\((?<params>[^)]*)\)\s*\{\s*return\s*\{\s*\.\.\.\s*(?<state>[\w$]+)\s*,\s*account\s*:\s*(?<account>[\w$]+)\s*\}\s*;?\s*\}",
+                                RegexOptions.Singleline),
+                            Payload = "account-reducer"
+                        },
+                        new PatchEntry
+                        {
                             Name = "disableNativeRemotePairing",
                             SearchHints = new[] { "requestRemoteAuthCode", "/v3/auth/remote_code" },
                             CapabilityHints = new[] { "requestRemoteAuthCode" },

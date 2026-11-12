@@ -1,0 +1,1 @@
+const ${decl}="ACTION_SET_ACCOUNT";function ${fn}(${params}){const a=${account}&&"object"==typeof ${account}?{...${account},subscription:{period:"yearly",state:"active"}}:${account};return{...${state},account:a}}

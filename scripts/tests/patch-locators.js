@@ -65,4 +65,27 @@ class TrainerService {
   }
 }
 
-module.exports = { TrainerService };
+
+class AccountApi {
+  #e;
+
+  getUserAccount() {
+    return this.#e.fetch({ endpoint: "/v3/account", method: "GET", name: "/v3/account", collectMetrics: !1 })
+  }
+
+  async setAccountWandBrandExperience() {
+    return this.#e.post("/v3/account/brand_experience_wand")
+  }
+
+  setAccountLanguage(e, t) {
+    return this.#e.post("/v3/account/language", { tag: e, auto: t })
+  }
+}
+
+const accountAction = "ACTION_SET_ACCOUNT";
+
+function accountReducer(t, e) {
+  return { ...t, account: e };
+}
+
+module.exports = { TrainerService, AccountApi };
