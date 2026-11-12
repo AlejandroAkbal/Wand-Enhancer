@@ -13,10 +13,18 @@ namespace WandEnhancer.Core.Patching.Shared
     internal static class ElectronFuseWire
     {
         public const int SentinelLength = 32;
-        public const int VersionLength = 4;
+
+        /// <summary>
+        /// Electron writes a one-byte wire version and a one-byte fuse count before the fuses,
+        /// not a uint32 version. Wand 12.71 ships <c>01 09</c> followed by nine state bytes.
+        /// </summary>
+        public const int HeaderLength = 2;
 
         /// <summary>Offset of the first fuse byte, counted from the sentinel.</summary>
-        public const int FuseOffset = SentinelLength + VersionLength;
+        public const int FuseOffset = SentinelLength + HeaderLength;
+
+        /// <summary>Wire layout version this code understands.</summary>
+        public const byte WireVersion = 1;
 
         /// <summary>
         /// Position of <c>EnableEmbeddedAsarIntegrityValidation</c> in Electron's fuse table:
@@ -44,7 +52,18 @@ namespace WandEnhancer.Core.Patching.Shared
         /// </summary>
         public static int MatchLength
         {
-            get { return FuseOffset + 16; }
+            get { return FuseOffset + 32; }
+        }
+
+        /// <summary>Number of fuses declared by the wire, or -1 when the block is not a fuse wire.</summary>
+        public static int FuseCount(byte[] block, int offset)
+        {
+            if (block == null || offset < 0 || block.Length - offset < FuseOffset)
+            {
+                return -1;
+            }
+
+            return block[offset + SentinelLength];
         }
 
         /// <summary>True when the sentinel sits at <paramref name="offset"/> in the block.</summary>
@@ -63,7 +82,13 @@ namespace WandEnhancer.Core.Patching.Shared
                 }
             }
 
-            return true;
+            if (block[offset + SentinelLength] != WireVersion)
+            {
+                return false;
+            }
+
+            int count = block[offset + SentinelLength + 1];
+            return count > 0 && count <= 32;
         }
 
         /// <summary>File offset of the sentinel, or -1 when the executable has no fuse wire.</summary>
